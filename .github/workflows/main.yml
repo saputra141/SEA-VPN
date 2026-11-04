@@ -15,39 +15,46 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
+      # 2. Initialize submodules
       - name: Initialize Hysteria submodules
         run: |
           git submodule sync --recursive
           git submodule update --init --recursive
           git submodule status --recursive
 
+      # 3. Java
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
 
+      # 4. Go
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.25'
           cache: false
 
+      # 5. Android SDK
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
 
+      # 6. Install SDK and NDK
       - name: Install Android SDK and NDK
         run: |
           sdkmanager "platform-tools" \
-            "platforms;android-37" \
+            "platforms;android-36" \
             "build-tools;36.0.0" \
             "ndk;30.0.14904198"
 
+      # 7. Install gomobile
       - name: Install gomobile and gobind
         run: |
           go install golang.org/x/mobile/cmd/gomobile@latest
@@ -55,25 +62,30 @@ jobs:
           echo "$HOME/go/bin" >> "$GITHUB_PATH"
           gomobile init
 
+      # 8. Gradle
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.4.1'
 
+      # 9. Fix Hysteria Gradle plugins
       - name: Fix Hysteria Gradle configuration
         run: |
           sed -i 's/alias(libs.plugins.android.library)/id("com.android.library")/' hysteria/hysteria/build.gradle.kts
           sed -i 's/alias(libs.plugins.kotlin.serialization)/id("org.jetbrains.kotlin.plugin.serialization")/' hysteria/hysteria/build.gradle.kts
 
-      - name: Update compileSdk to 37
+      # 10. Android compile SDK
+      - name: Set compileSdk 36
         run: |
-          sed -i -E 's/compileSdk[[:space:]]*=[[:space:]]*[0-9]+/compileSdk = 37/' app/build.gradle.kts
-          sed -i -E 's/compileSdk[[:space:]]*=[[:space:]]*[0-9]+/compileSdk = 37/' hysteria/hysteria/build.gradle.kts
+          sed -i -E 's/compileSdk[[:space:]]*=[[:space:]]*[0-9]+/compileSdk = 36/' app/build.gradle.kts
+          sed -i -E 's/compileSdk[[:space:]]*=[[:space:]]*[0-9]+/compileSdk = 36/' hysteria/hysteria/build.gradle.kts
 
+      # 11. Build APK
       - name: Build APK
         run: |
           gradle assembleDebug --stacktrace -x :hysteria:syncHysteriaSubmodule
 
+      # 12. Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
