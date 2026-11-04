@@ -12,8 +12,8 @@ android {
         applicationId = "com.seavpn.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.2"
     }
 
     compileOptions {
@@ -24,17 +24,8 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-        }
-        debug {
-            isMinifyEnabled = false
-        }
-    }
 }
 
 dependencies {
-    implementation("com.github.mwiede:jsch:0.2.25")
+    // SSH removed
 }
