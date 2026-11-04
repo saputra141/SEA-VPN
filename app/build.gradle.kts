@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.seavpn.app"
-        minSdk = 26
+        minSdk = 29
         targetSdk = 35
         versionCode = 4
         versionName = "1.3"
