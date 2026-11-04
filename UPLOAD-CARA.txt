@@ -1,0 +1,9 @@
+SEA VPN - UPLOAD ZIP SAJA
+1. Buat repository GitHub bernama sea-vpn.
+2. Tekan Add file > Upload files, upload ZIP ini ke root repository (jangan diekstrak).
+3. Commit changes.
+4. Tab Actions > Build SEA VPN APK > Run workflow.
+5. Setelah hijau, buka run tersebut > Artifacts > SEA-VPN-APK.
+6. Download artifact ZIP, ekstrak APK, lalu install.
+
+PENTING: Ini starter APK/UI. Belum ada tunnel VPN yang berfungsi, server global, TLS SNI/WSS/SSH/payload. Jangan dianggap VPN internet aktif.
