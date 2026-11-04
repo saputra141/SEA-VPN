@@ -1,46 +1,55 @@
-name: Build SEA VPN APK
+
+name: SEA VPN APK Builder
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Extract source ZIP if present
-        shell: bash
-        run: |
-          set -e
-          ZIP_FILE="$(find . -maxdepth 2 -type f -name '*.zip' ! -name 'SEA-VPN-Upload.zip' | head -n 1)"
-          if [ -n "$ZIP_FILE" ]; then
-            echo "Extracting $ZIP_FILE"
-            mkdir -p extracted
-            unzip -o "$ZIP_FILE" -d extracted
-            # Move extracted project files to repository root
-            cp -a extracted/. .
-          fi
-
-      - name: Set up Java
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: 17
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Install Android SDK
+        run: |
+          mkdir -p "$HOME/android-sdk/cmdline-tools"
+          cd "$HOME/android-sdk/cmdline-tools"
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O tools.zip
+          unzip -q tools.zip
+          mkdir -p latest
+          mv cmdline-tools/* latest/
+          echo "ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
+          echo "$HOME/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
 
-      - name: Set up Gradle
+      - name: Install SDK Packages
+        run: |
+          yes | sdkmanager --sdk_root="$ANDROID_HOME" --licenses
+          sdkmanager --sdk_root="$ANDROID_HOME" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.9'
+          gradle-version: 8.9
 
       - name: Build APK
         run: gradle assembleDebug
 
-      - name: Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: SEA-VPN-APK
