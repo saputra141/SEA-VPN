@@ -27,6 +27,7 @@ jobs:
           git submodule sync --recursive
           git submodule update --init --recursive
           git submodule status --recursive
+          cp hysteria/.github/toolchain.env .github/toolchain.env
 
       # 3. Java
       - name: Setup Java
