@@ -1,0 +1,247 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#07121f">
+<title>SEA VPN Premium</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:#07121f;
+  color:#eaf8ff;
+  font-family:Inter,Arial,sans-serif;
+  min-height:100vh;
+}
+.app{
+  max-width:430px;
+  margin:auto;
+  padding:24px 20px 30px;
+}
+.header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:35px;
+}
+.brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.logo{
+  width:46px;height:46px;
+  background:#fff;
+  border-radius:15px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#168cff;
+  font-size:27px;
+  font-weight:900;
+  box-shadow:0 0 20px #168cff35;
+}
+.brand h1{font-size:20px;letter-spacing:1px}
+.brand p{font-size:10px;color:#7796ab;margin-top:4px;letter-spacing:2px}
+.badge{
+  border:1px solid #16445b;
+  background:#0c2535;
+  color:#46d9ce;
+  padding:7px 11px;
+  border-radius:20px;
+  font-size:11px;
+}
+.hero{text-align:center;margin-bottom:25px}
+.hero h2{font-size:25px;margin-bottom:9px}
+.hero p{color:#7894a8;font-size:13px}
+.card{
+  background:linear-gradient(145deg,#102436,#0b1a29);
+  border:1px solid #1a3448;
+  border-radius:25px;
+  padding:24px;
+  margin-bottom:17px;
+  box-shadow:0 15px 40px #0002;
+}
+.status{
+  display:flex;align-items:center;justify-content:center;
+  gap:8px;color:#91aebe;font-size:13px;
+}
+.dot{
+  width:8px;height:8px;border-radius:50%;
+  background:#64798a;
+}
+.dot.connected{background:#37e3b1;box-shadow:0 0 12px #37e3b1}
+.power{
+  width:175px;height:175px;
+  border-radius:50%;
+  margin:27px auto;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid #1c5065;
+  background:radial-gradient(circle,#123b50,#0b1b2a 68%);
+  box-shadow:0 0 45px #00b9ca18,inset 0 0 30px #00b9ca12;
+  cursor:pointer;
+  transition:.3s;
+}
+.power-inner{
+  width:135px;height:135px;border-radius:50%;
+  background:#102c40;border:2px solid #22617a;
+  display:flex;align-items:center;justify-content:center;
+  font-size:53px;color:#38c9e9;
+}
+.power.active{
+  border-color:#39e6ba;
+  box-shadow:0 0 45px #39e6ba35;
+}
+.power.active .power-inner{
+  color:#39e6ba;border-color:#39e6ba;
+}
+.big-status{text-align:center;font-size:20px;font-weight:700}
+.small-status{text-align:center;color:#7896a9;font-size:12px;margin-top:8px}
+.section-title{
+  font-size:12px;color:#7c9aaf;
+  letter-spacing:1.5px;margin-bottom:14px;
+}
+.server{
+  display:flex;align-items:center;gap:13px;
+  background:#0b1b29;border:1px solid #1a3548;
+  border-radius:17px;padding:15px;
+}
+.flag{
+  width:43px;height:43px;border-radius:13px;
+  background:#17374b;display:flex;align-items:center;
+  justify-content:center;font-size:23px;
+}
+.server-info{flex:1}
+.server-info strong{font-size:14px}
+.server-info p{font-size:11px;color:#7894a8;margin-top:5px}
+.arrow{color:#5d829b;font-size:22px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat{
+  background:#0b1b29;border:1px solid #1a3548;
+  padding:15px;border-radius:16px;
+}
+.stat p{color:#7694a9;font-size:11px;margin-bottom:8px}
+.stat strong{font-size:17px;color:#d8f5ff}
+.footer{text-align:center;color:#456579;font-size:11px;margin-top:25px}
+button{font-family:inherit}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+  <header class="header">
+    <div class="brand">
+      <div class="logo">X</div>
+      <div>
+        <h1>SEA VPN</h1>
+        <p>SECURE CONNECTION</p>
+      </div>
+    </div>
+    <div class="badge">PREMIUM</div>
+  </header>
+
+  <section class="hero">
+    <h2>Internet, tanpa batas.</h2>
+    <p>Privasi dan koneksi dalam satu sentuhan.</p>
+  </section>
+
+  <section class="card">
+    <div class="status">
+      <span class="dot" id="dot"></span>
+      <span id="status">DISCONNECTED</span>
+    </div>
+
+    <div class="power" id="power" onclick="toggleVPN()">
+      <div class="power-inner">⏻</div>
+    </div>
+
+    <div class="big-status" id="bigStatus">Siap terhubung</div>
+    <div class="small-status" id="smallStatus">Pilih server untuk memulai</div>
+  </section>
+
+  <section class="card">
+    <div class="section-title">LOKASI SERVER</div>
+    <div class="server" onclick="chooseServer()">
+      <div class="flag" id="flag">🇸🇬</div>
+      <div class="server-info">
+        <strong id="serverName">Singapore</strong>
+        <p id="serverDesc">Asia Pacific · Server 01</p>
+      </div>
+      <div class="arrow">›</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="section-title">CONNECTION INFO</div>
+    <div class="stats">
+      <div class="stat">
+        <p>STATUS</p>
+        <strong id="connection">Offline</strong>
+      </div>
+      <div class="stat">
+        <p>PROTOCOL</p>
+        <strong>VPN Engine</strong>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    SEA VPN · Secure your digital journey
+  </footer>
+
+</div>
+
+<script>
+let connected = false;
+
+const servers = [
+  {name:"Singapore",flag:"🇸🇬",desc:"Asia Pacific · Server 01"},
+  {name:"Japan",flag:"🇯🇵",desc:"Asia Pacific · Server 02"},
+  {name:"United States",flag:"🇺🇸",desc:"North America · Server 03"},
+  {name:"Germany",flag:"🇩🇪",desc:"Europe · Server 04"},
+  {name:"Indonesia",flag:"🇮🇩",desc:"Asia Pacific · Server 05"}
+];
+
+let currentServer = 0;
+
+function chooseServer(){
+  if(connected){
+    alert("Putuskan koneksi terlebih dahulu.");
+    return;
+  }
+
+  let menu = servers.map((s,i)=>`${i+1}. ${s.flag} ${s.name}`).join("\n");
+  let choice = prompt("Pilih server:\n"+menu);
+
+  if(choice && servers[Number(choice)-1]){
+    currentServer = Number(choice)-1;
+    document.getElementById("flag").textContent=servers[currentServer].flag;
+    document.getElementById("serverName").textContent=servers[currentServer].name;
+    document.getElementById("serverDesc").textContent=servers[currentServer].desc;
+  }
+}
+
+function toggleVPN(){
+  connected = !connected;
+
+  document.getElementById("power").classList.toggle("active",connected);
+  document.getElementById("dot").classList.toggle("connected",connected);
+
+  document.getElementById("status").textContent=
+    connected ? "CONNECTED (DEMO)" : "DISCONNECTED";
+
+  document.getElementById("bigStatus").textContent=
+    connected ? "Tampilan terhubung" : "Siap terhubung";
+
+  document.getElementById("smallStatus").textContent=
+    connected ? "Simulasi UI · VPN belum aktif" : "Pilih server untuk memulai";
+
+  document.getElementById("connection").textContent=
+    connected ? "Demo" : "Offline";
+}
+</script>
+</body>
+</html>
