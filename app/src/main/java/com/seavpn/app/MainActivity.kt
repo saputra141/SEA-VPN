@@ -1,21 +1,142 @@
 package com.seavpn.app
 import android.app.Activity
-import android.os.Bundle
-import android.graphics.Color
-import android.view.Gravity
-import android.widget.*
 import android.content.Intent
+import android.graphics.Color
 import android.net.VpnService
-class MainActivity: Activity() {
- override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState)
-  window.statusBarColor=Color.rgb(0,105,105); window.navigationBarColor=Color.rgb(0,70,75)
-  val layout=LinearLayout(this); layout.orientation=LinearLayout.VERTICAL; layout.gravity=Gravity.CENTER; layout.setPadding(32,32,32,32); layout.setBackgroundColor(Color.rgb(5,35,42))
-  val logo=TextView(this); logo.text="✕"; logo.textSize=72f; logo.setTextColor(Color.WHITE); logo.gravity=Gravity.CENTER
-  val title=TextView(this); title.text="SEA VPN"; title.textSize=30f; title.setTextColor(Color.WHITE); title.gravity=Gravity.CENTER
-  val sub=TextView(this); sub.text="Secure • Simple • Global"; sub.setTextColor(Color.LTGRAY); sub.gravity=Gravity.CENTER
-  val server=Spinner(this); server.adapter=ArrayAdapter(this,android.R.layout.simple_spinner_dropdown_item,listOf("Global (demo)","Singapore (demo)","United States (demo)","Japan (demo)"))
-  val btn=Button(this); btn.text="CONNECT"; btn.setOnClickListener { val i=VpnService.prepare(this); if(i!=null) startActivityForResult(i,10) else startService(Intent(this,SeaVpnService::class.java)); btn.text="DEMO — NOT CONNECTED" }
-  layout.addView(logo); layout.addView(title); layout.addView(sub); layout.addView(server); layout.addView(btn); setContentView(layout)
- }
- override fun onActivityResult(r:Int,c:Int,d:Intent?){super.onActivityResult(r,c,d); if(r==10 && c==RESULT_OK) startService(Intent(this,SeaVpnService::class.java))}
+import android.os.Bundle
+import android.view.Gravity
+import android.widget.Button
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.TextView
+
+class MainActivity : Activity() {
+    private val vpnRequestCode = 1001
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        window.statusBarColor = Color.rgb(6, 32, 36)
+        window.navigationBarColor = Color.rgb(8, 42, 45)
+
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(28, 48, 28, 28)
+            setBackgroundColor(Color.rgb(6, 28, 32))
+        }
+
+        val logo = TextView(this).apply {
+            text = "SEA"
+            textSize = 42f
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 12)
+        }
+
+        val title = TextView(this).apply {
+            text = "VPN"
+            textSize = 28f
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 18)
+        }
+
+        val subtitle = TextView(this).apply {
+            text = "Masukkan server Hysteria 2 yang valid"
+            textSize = 14f
+            setTextColor(Color.argb(255, 200, 220, 220))
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 24)
+        }
+
+        val serverInput = EditText(this).apply {
+            hint = "host:port (contoh: example.com:443)"
+            setText("example.com:443")
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.argb(255, 180, 200, 200))
+            setBackgroundColor(Color.argb(255, 18, 52, 58))
+            setPadding(24, 20, 24, 20)
+        }
+
+        val authInput = EditText(this).apply {
+            hint = "auth (opsional)"
+            setText("")
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.argb(255, 180, 200, 200))
+            setBackgroundColor(Color.argb(255, 18, 52, 58))
+            setPadding(24, 20, 24, 20)
+        }
+
+        val sniInput = EditText(this).apply {
+            hint = "SNI (opsional)"
+            setText("example.com")
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.argb(255, 180, 200, 200))
+            setBackgroundColor(Color.argb(255, 18, 52, 58))
+            setPadding(24, 20, 24, 20)
+        }
+
+        val connectButton = Button(this).apply {
+            text = "CONNECT"
+            setBackgroundColor(Color.rgb(15, 112, 120))
+            setTextColor(Color.WHITE)
+            setOnClickListener {
+                val server = serverInput.text?.toString()?.trim().orEmpty()
+                val auth = authInput.text?.toString()?.trim().orEmpty()
+                val sni = sniInput.text?.toString()?.trim().orEmpty()
+
+                if (server.isEmpty()) {
+                    serverInput.error = "Server wajib diisi"
+                    return@setOnClickListener
+                }
+
+                val prepareIntent = VpnService.prepare(this@MainActivity)
+                if (prepareIntent != null) {
+                    startActivityForResult(prepareIntent, vpnRequestCode)
+                } else {
+                    startService(createServiceIntent(server, auth, sni))
+                }
+            }
+        }
+
+        val stopButton = Button(this).apply {
+            text = "STOP"
+            setBackgroundColor(Color.rgb(120, 52, 52))
+            setTextColor(Color.WHITE)
+            setOnClickListener {
+                stopService(Intent(this@MainActivity, SeaVpnService::class.java))
+            }
+        }
+
+        root.addView(logo)
+        root.addView(title)
+        root.addView(subtitle)
+        root.addView(serverInput)
+        root.addView(authInput)
+        root.addView(sniInput)
+        root.addView(connectButton)
+        root.addView(stopButton)
+        setContentView(root)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == vpnRequestCode && resultCode == Activity.RESULT_OK) {
+            val server = findViewById<EditText>(android.R.id.input).text?.toString() ?: ""
+            val auth = findViewById<EditText>(android.R.id.input).text?.toString() ?: ""
+            val sni = findViewById<EditText>(android.R.id.input).text?.toString() ?: ""
+            startService(
+                createServiceIntent(server, auth, sni)
+            )
+        }
+    }
+
+    private fun createServiceIntent(server: String, auth: String, sni: String): Intent {
+        return Intent(this, SeaVpnService::class.java).apply {
+            putExtra("server", server)
+            putExtra("auth", auth)
+            putExtra("sni", sni)
+        }
+    }
 }
