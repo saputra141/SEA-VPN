@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repository
+      # 1. Checkout
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -33,7 +33,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '17'
 
       # 4. Go
       - name: Setup Go
@@ -62,25 +62,33 @@ jobs:
           echo "$HOME/go/bin" >> "$GITHUB_PATH"
           gomobile init
 
-      # 8. Gradle
+      # 8. Setup compatible Gradle
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '9.4.1'
+          gradle-version: '8.11.1'
 
-      # 9. Fix Hysteria Gradle plugins
+      # 9. Fix Android Gradle Plugin and Kotlin versions
+      - name: Fix Gradle plugin versions
+        run: |
+          sed -i 's/9.2.1/8.9.1/g' build.gradle.kts
+          sed -i 's/2.4.20/2.1.20/g' build.gradle.kts
+          sed -i 's/9.2.1/8.9.1/g' settings.gradle.kts
+          sed -i 's/2.4.20/2.1.20/g' settings.gradle.kts
+
+      # 10. Fix Hysteria Gradle plugins
       - name: Fix Hysteria Gradle configuration
         run: |
           sed -i 's/alias(libs.plugins.android.library)/id("com.android.library")/' hysteria/hysteria/build.gradle.kts
           sed -i 's/alias(libs.plugins.kotlin.serialization)/id("org.jetbrains.kotlin.plugin.serialization")/' hysteria/hysteria/build.gradle.kts
 
-      # 10. Android compile SDK
+      # 11. Set Android compile SDK
       - name: Set compileSdk 36
         run: |
           sed -i -E 's/compileSdk[[:space:]]*=[[:space:]]*[0-9]+/compileSdk = 36/' app/build.gradle.kts
           sed -i -E 's/compileSdk[[:space:]]*=[[:space:]]*[0-9]+/compileSdk = 36/' hysteria/hysteria/build.gradle.kts
 
-      # 11. Fix AndroidX dependency conflict
+      # 12. Fix AndroidX dependency versions
       - name: Fix AndroidX dependency versions
         run: |
           cat > "$RUNNER_TEMP/androidx-fix.gradle" <<'EOF'
@@ -94,7 +102,7 @@ jobs:
           }
           EOF
 
-      # 12. Build APK
+      # 13. Build APK
       - name: Build APK
         run: |
           gradle assembleDebug \
@@ -102,7 +110,7 @@ jobs:
             --init-script "$RUNNER_TEMP/androidx-fix.gradle" \
             -x :hysteria:syncHysteriaSubmodule
 
-      # 13. Upload APK
+      # 14. Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
