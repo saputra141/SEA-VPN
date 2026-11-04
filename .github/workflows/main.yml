@@ -76,11 +76,50 @@ jobs:
           sed -i 's/9.2.1/8.9.1/g' settings.gradle.kts
           sed -i 's/2.4.20/2.1.20/g' settings.gradle.kts
 
-      # 10. Fix Hysteria Gradle plugins
+      # 10. Fix Hysteria Gradle plugins and BuildConfig configuration
       - name: Fix Hysteria Gradle configuration
         run: |
           sed -i 's/alias(libs.plugins.android.library)/id("com.android.library")/' hysteria/hysteria/build.gradle.kts
           sed -i 's/alias(libs.plugins.kotlin.serialization)/id("org.jetbrains.kotlin.plugin.serialization")/' hysteria/hysteria/build.gradle.kts
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path("hysteria/hysteria/build.gradle.kts")
+          text = path.read_text()
+
+          # Hapus pendaftaran BuildConfigField berbasis variant yang gagal
+          # mengonfigurasi task generateDebugBuildConfig.
+          text, count = re.subn(
+              r"\nandroidComponents \{\n    onVariants \{ variant ->.*?\n    \}\n\}\n",
+              "\n",
+              text,
+              count=1,
+              flags=re.S,
+          )
+          if count != 1:
+              raise SystemExit(
+                  "Blok androidComponents untuk CORE_VERSION tidak ditemukan"
+              )
+
+          # Daftarkan CORE_VERSION melalui defaultConfig.
+          marker = 'val golibDir = layout.projectDirectory.dir("golib")'
+          build_config = r'''android.defaultConfig.buildConfigField(
+              "String",
+              "CORE_VERSION",
+              "\"${hysteriaCoreVersion.get()}\"",
+          )
+
+          '''
+
+          if marker not in text:
+              raise SystemExit(
+                  "Titik penyisipan CORE_VERSION tidak ditemukan"
+              )
+
+          path.write_text(text.replace(marker, build_config + marker, 1))
+          PY
 
       # 11. Set Android compile SDK
       - name: Set compileSdk 36
