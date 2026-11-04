@@ -1,46 +1,44 @@
+
 name: Build SEA VPN APK
 
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-      - name: Extract source ZIP if present
-        shell: bash
-        run: |
-          set -e
-          ZIP_FILE="$(find . -maxdepth 2 -type f -name '*.zip' ! -name 'SEA-VPN-Upload.zip' | head -n 1)"
-          if [ -n "$ZIP_FILE" ]; then
-            echo "Extracting $ZIP_FILE"
-            mkdir -p extracted
-            unzip -o "$ZIP_FILE" -d extracted
-            # Move extracted project files to repository root
-            cp -a extracted/. .
-          fi
-
-      - name: Set up Java
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Set up Gradle
+      - name: Setup Gradle 9.4.1
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.9'
+          gradle-version: '9.4.1'
+
+      - name: Install Android SDK packages
+        run: |
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Build APK
         run: gradle assembleDebug
 
-      - name: Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: SEA-VPN-APK
