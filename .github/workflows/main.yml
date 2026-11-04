@@ -80,12 +80,29 @@ jobs:
           sed -i -E 's/compileSdk[[:space:]]*=[[:space:]]*[0-9]+/compileSdk = 36/' app/build.gradle.kts
           sed -i -E 's/compileSdk[[:space:]]*=[[:space:]]*[0-9]+/compileSdk = 36/' hysteria/hysteria/build.gradle.kts
 
-      # 11. Build APK
+      # 11. Fix AndroidX dependency conflict
+      - name: Fix AndroidX dependency versions
+        run: |
+          cat > "$RUNNER_TEMP/androidx-fix.gradle" <<'EOF'
+          allprojects {
+              configurations.configureEach {
+                  resolutionStrategy.force(
+                      'androidx.core:core:1.15.0',
+                      'androidx.core:core-ktx:1.15.0'
+                  )
+              }
+          }
+          EOF
+
+      # 12. Build APK
       - name: Build APK
         run: |
-          gradle assembleDebug --stacktrace -x :hysteria:syncHysteriaSubmodule
+          gradle assembleDebug \
+            --stacktrace \
+            --init-script "$RUNNER_TEMP/androidx-fix.gradle" \
+            -x :hysteria:syncHysteriaSubmodule
 
-      # 12. Upload APK
+      # 13. Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
