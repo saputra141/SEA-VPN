@@ -2,10 +2,11 @@
 package com.seavpn.app
 
 import android.app.Activity
+import android.content.Intent
+import android.net.VpnService
 import android.os.Bundle
 import android.graphics.Color
 import android.graphics.Typeface
-import android.content.Context
 import android.view.Gravity
 import android.view.View
 import android.widget.*
@@ -13,228 +14,256 @@ import android.graphics.drawable.GradientDrawable
 
 class MainActivity : Activity() {
 
-    private val bg = Color.rgb(7, 18, 29)
-    private val panel = Color.rgb(17, 34, 48)
+    private val bg = Color.rgb(7, 17, 27)
+    private val card = Color.rgb(17, 35, 49)
     private val teal = Color.rgb(0, 210, 190)
     private val white = Color.WHITE
-    private val muted = Color.rgb(160, 180, 195)
+    private val muted = Color.rgb(150, 175, 190)
 
     private lateinit var status: TextView
     private lateinit var connect: Button
-    private lateinit var host: EditText
-    private lateinit var port: EditText
-    private lateinit var username: EditText
-    private lateinit var password: EditText
+    private lateinit var server: Spinner
     private lateinit var sni: EditText
-    private lateinit var mode: Spinner
+
+    private var connected = false
+
+    companion object {
+        private const val VPN_REQUEST = 100
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        window.statusBarColor = bg
-        window.navigationBarColor = bg
-
-        val root = LinearLayout(this)
-        root.orientation = LinearLayout.VERTICAL
-        root.setBackgroundColor(bg)
-
-        val scroll = ScrollView(this)
-        val content = LinearLayout(this)
-        content.orientation = LinearLayout.VERTICAL
-        content.setPadding(24, 28, 24, 32)
-
-        // HEADER
-        val header = LinearLayout(this)
-        header.orientation = LinearLayout.HORIZONTAL
-        header.gravity = Gravity.CENTER_VERTICAL
-
-        val logo = TextView(this)
-        logo.text = "X"
-        logo.textSize = 30f
-        logo.setTextColor(Color.rgb(0, 120, 255))
-        logo.gravity = Gravity.CENTER
-        logo.typeface = Typeface.DEFAULT_BOLD
-        logo.background = rounded(white, 18)
-        header.addView(logo, LinearLayout.LayoutParams(60, 60))
-
-        val brand = LinearLayout(this)
-        brand.orientation = LinearLayout.VERTICAL
-        brand.setPadding(16, 0, 0, 0)
-
-        val title = TextView(this)
-        title.text = "SEA VPN"
-        title.textSize = 23f
-        title.setTextColor(white)
-        title.typeface = Typeface.DEFAULT_BOLD
-
-        val subtitle = TextView(this)
-        subtitle.text = "SECURE CONNECTION"
-        subtitle.textSize = 10f
-        subtitle.setTextColor(teal)
-
-        brand.addView(title)
-        brand.addView(subtitle)
-        header.addView(brand)
-
-        content.addView(header)
-        gap(content, 28)
-
-        // STATUS
-        val statusCard = LinearLayout(this)
-        statusCard.orientation = LinearLayout.VERTICAL
-        statusCard.gravity = Gravity.CENTER
-        statusCard.setPadding(20, 24, 20, 24)
-        statusCard.background = rounded(panel, 22)
-
-        val orb = TextView(this)
-        orb.text = "●"
-        orb.textSize = 35f
-        orb.setTextColor(teal)
-        orb.gravity = Gravity.CENTER
-
-        status = TextView(this)
-        status.text = "DISCONNECTED"
-        status.textSize = 17f
-        status.typeface = Typeface.DEFAULT_BOLD
-        status.setTextColor(white)
-        status.gravity = Gravity.CENTER
-
-        val detail = TextView(this)
-        detail.text = "Choose configuration to continue"
-        detail.textSize = 12f
-        detail.setTextColor(muted)
-        detail.gravity = Gravity.CENTER
-
-        statusCard.addView(orb)
-        statusCard.addView(status)
-        statusCard.addView(detail)
-        content.addView(statusCard)
-        gap(content, 22)
-
-        // SERVER
-        section(content, "SERVER CONFIGURATION")
-
-        mode = Spinner(this)
-        mode.adapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_spinner_dropdown_item,
-            listOf(
-                "SSH DIRECT",
-                "SSH + TLS SNI",
-                "SSH + WSS",
-                "SSH + HTTP PAYLOAD"
-            )
-        )
-        mode.background = rounded(panel, 12)
-        content.addView(mode, matchWrap())
-        gap(content, 12)
-
-        host = field("SSH Host / IP")
-        port = field("SSH Port (22)")
-        username = field("SSH Username")
-        password = field("SSH Password")
-        password.inputType = 129
-
-        sni = field("TLS SNI / WSS Host")
-
-        content.addView(host, matchWrap())
-        gap(content, 10)
-        content.addView(port, matchWrap())
-        gap(content, 10)
-        content.addView(username, matchWrap())
-        gap(content, 10)
-        content.addView(password, matchWrap())
-        gap(content, 10)
-        content.addView(sni, matchWrap())
-        gap(content, 18)
-
-        // CONNECT
-        connect = Button(this)
-        connect.text = "CONNECT"
-        connect.textSize = 16f
-        connect.typeface = Typeface.DEFAULT_BOLD
-        connect.setTextColor(Color.BLACK)
-        connect.background = rounded(teal, 16)
-        content.addView(connect, LinearLayout.LayoutParams(-1, 58))
-
-        connect.setOnClickListener {
-            status.text = "CONFIGURATION SAVED"
-            Toast.makeText(
-                this,
-                "Pengaturan tersimpan. Tunnel VPN belum aktif.",
-                Toast.LENGTH_LONG
-            ).show()
-        }
-
-        gap(content, 18)
-
-        val save = Button(this)
-        save.text = "SAVE CONFIGURATION"
-        save.setTextColor(white)
-        save.background = rounded(panel, 14)
-        content.addView(save, LinearLayout.LayoutParams(-1, 50))
-
-        save.setOnClickListener {
-            getSharedPreferences("sea_vpn", Context.MODE_PRIVATE)
-                .edit()
-                .putString("host", host.text.toString())
-                .putString("port", port.text.toString())
-                .putString("username", username.text.toString())
-                .putString("sni", sni.text.toString())
-                .putInt("mode", mode.selectedItemPosition)
-                .apply()
-
-            Toast.makeText(this, "Konfigurasi disimpan", Toast.LENGTH_SHORT).show()
-        }
-
-        gap(content, 24)
-
-        val footer = TextView(this)
-        footer.text = "SEA VPN • PRIVATE NETWORK\nVPN ENGINE NOT CONFIGURED"
-        footer.textSize = 10f
-        footer.setTextColor(muted)
-        footer.gravity = Gravity.CENTER
-        content.addView(footer)
-
-        scroll.addView(content)
-        root.addView(scroll)
-        setContentView(root)
+        buildUI()
     }
 
-    private fun section(parent: LinearLayout, text: String) {
-        val tv = TextView(this)
-        tv.text = text
-        tv.textSize = 12f
-        tv.typeface = Typeface.DEFAULT_BOLD
-        tv.setTextColor(teal)
-        parent.addView(tv)
-        gap(parent, 10)
-    }
-
-    private fun field(hint: String): EditText {
-        val e = EditText(this)
-        e.hint = hint
-        e.setHintTextColor(muted)
-        e.setTextColor(white)
-        e.textSize = 14f
-        e.setSingleLine(true)
-        e.setPadding(18, 12, 18, 12)
-        e.background = rounded(panel, 12)
-        return e
-    }
-
-    private fun rounded(color: Int, radius: Int): GradientDrawable {
+    private fun rounded(color: Int, radius: Int = 24): GradientDrawable {
         return GradientDrawable().apply {
             setColor(color)
             cornerRadius = radius.toFloat()
         }
     }
 
-    private fun gap(parent: LinearLayout, height: Int) {
-        parent.addView(View(this), LinearLayout.LayoutParams(1, height))
+    private fun buildUI() {
+
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(24, 24, 24, 24)
+            setBackgroundColor(bg)
+        }
+
+        val scroll = ScrollView(this)
+        scroll.addView(root)
+
+        val logo = TextView(this).apply {
+            text = "X"
+            textSize = 32f
+            gravity = Gravity.CENTER
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(teal)
+        }
+
+        root.addView(logo, LinearLayout.LayoutParams(100, 100))
+
+        val title = TextView(this).apply {
+            text = "SEA VPN"
+            textSize = 30f
+            typeface = Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+            setTextColor(white)
+        }
+
+        root.addView(title)
+
+        val subtitle = TextView(this).apply {
+            text = "SECURE • FAST • PRIVATE"
+            textSize = 12f
+            gravity = Gravity.CENTER
+            setTextColor(teal)
+        }
+
+        root.addView(subtitle)
+
+        val statusCard = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            background = rounded(card, 28)
+            setPadding(24, 36, 24, 36)
+        }
+
+        val dot = TextView(this).apply {
+            text = "●"
+            textSize = 36f
+            gravity = Gravity.CENTER
+            setTextColor(teal)
+        }
+
+        statusCard.addView(dot)
+
+        status = TextView(this).apply {
+            text = "NOT CONNECTED"
+            textSize = 20f
+            typeface = Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+            setTextColor(white)
+        }
+
+        statusCard.addView(status)
+
+        val desc = TextView(this).apply {
+            text = "Your connection is currently unprotected"
+            textSize = 13f
+            gravity = Gravity.CENTER
+            setTextColor(muted)
+        }
+
+        statusCard.addView(desc)
+
+        val params = LinearLayout.LayoutParams(
+            -1, -2
+        ).apply {
+            topMargin = 40
+            bottomMargin = 28
+        }
+
+        root.addView(statusCard, params)
+
+        label(root, "SERVER LOCATION")
+
+        server = Spinner(this)
+
+        val locations = arrayOf(
+            "Singapore 🇸🇬",
+            "Indonesia 🇮🇩",
+            "Japan 🇯🇵",
+            "United States 🇺🇸"
+        )
+
+        server.adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_dropdown_item,
+            locations
+        )
+
+        server.background = rounded(card, 18)
+
+        root.addView(server, LinearLayout.LayoutParams(-1, 60))
+
+        label(root, "TLS / SNI")
+
+        sni = EditText(this).apply {
+            hint = "SNI hostname"
+            textSize = 15f
+            setSingleLine(true)
+            setTextColor(white)
+            setHintTextColor(muted)
+            background = rounded(card, 18)
+            setPadding(20, 0, 20, 0)
+        }
+
+        root.addView(sni, LinearLayout.LayoutParams(-1, 60))
+
+        connect = Button(this).apply {
+            text = "CONNECT"
+            textSize = 18f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(bg)
+            background = rounded(teal, 24)
+            setOnClickListener {
+                if (!connected) requestVpn()
+                else disconnectVpn()
+            }
+        }
+
+        val connectParams = LinearLayout.LayoutParams(
+            -1, 68
+        ).apply {
+            topMargin = 32
+        }
+
+        root.addView(connect, connectParams)
+
+        val footer = TextView(this).apply {
+            text = "\nSEA VPN • PRIVATE NETWORK\nUDP VPN ENGINE"
+            textSize = 12f
+            gravity = Gravity.CENTER
+            setTextColor(muted)
+        }
+
+        root.addView(footer)
+
+        setContentView(scroll)
     }
 
-    private fun matchWrap(): LinearLayout.LayoutParams {
-        return LinearLayout.LayoutParams(-1, 54)
+    private fun label(root: LinearLayout, text: String) {
+        val view = TextView(this).apply {
+            this.text = text
+            textSize = 12f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(teal)
+            setPadding(4, 24, 4, 10)
+        }
+        root.addView(view)
+    }
+
+    private fun requestVpn() {
+        val intent = VpnService.prepare(this)
+
+        if (intent != null) {
+            startActivityForResult(intent, VPN_REQUEST)
+        } else {
+            startTunnel()
+        }
+    }
+
+    @Deprecated("Legacy VPN permission callback")
+    override fun onActivityResult(
+        requestCode: Int,
+        resultCode: Int,
+        data: Intent?
+    ) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode == VPN_REQUEST &&
+            resultCode == RESULT_OK) {
+            startTunnel()
+        }
+    }
+
+    private fun startTunnel() {
+
+        val intent = Intent(this, SeaVpnService::class.java)
+        intent.action = SeaVpnService.ACTION_CONNECT
+
+        if (android.os.Build.VERSION.SDK_INT >= 26) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
+        }
+
+        connected = true
+        status.text = "VPN INTERFACE STARTED"
+        connect.text = "DISCONNECT"
+        connect.setTextColor(white)
+        connect.background = rounded(Color.rgb(190, 50, 60), 24)
+
+        Toast.makeText(
+            this,
+            "TUN interface started",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun disconnectVpn() {
+
+        val intent = Intent(this, SeaVpnService::class.java)
+        intent.action = SeaVpnService.ACTION_DISCONNECT
+        startService(intent)
+
+        connected = false
+        status.text = "NOT CONNECTED"
+        connect.text = "CONNECT"
+        connect.setTextColor(bg)
+        connect.background = rounded(teal, 24)
     }
 }
