@@ -7,25 +7,27 @@ import android.net.VpnService
 import android.os.Bundle
 import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.view.Gravity
 import android.view.View
 import android.widget.*
-import android.graphics.drawable.GradientDrawable
 
 class MainActivity : Activity() {
 
-    private val bg = Color.rgb(7, 17, 27)
-    private val card = Color.rgb(17, 35, 49)
-    private val teal = Color.rgb(0, 210, 190)
+    private val bg = Color.rgb(6, 15, 25)
+    private val panel = Color.rgb(17, 34, 48)
+    private val accent = Color.rgb(0, 215, 190)
+    private val blue = Color.rgb(20, 105, 235)
     private val white = Color.WHITE
-    private val muted = Color.rgb(150, 175, 190)
+    private val muted = Color.rgb(155, 178, 192)
 
     private lateinit var status: TextView
-    private lateinit var connect: Button
-    private lateinit var server: Spinner
-    private lateinit var sni: EditText
+    private lateinit var detail: TextView
+    private lateinit var connectButton: TextView
+    private lateinit var serverSpinner: Spinner
+    private lateinit var sniInput: EditText
 
-    private var connected = false
+    private var permissionGranted = false
 
     companion object {
         private const val VPN_REQUEST = 100
@@ -33,21 +35,21 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        buildUI()
+        createUI()
     }
 
-    private fun rounded(color: Int, radius: Int = 24): GradientDrawable {
-        return GradientDrawable().apply {
-            setColor(color)
-            cornerRadius = radius.toFloat()
-        }
+    private fun shape(
+        color: Int,
+        radius: Int = 22
+    ) = GradientDrawable().apply {
+        setColor(color)
+        cornerRadius = radius.toFloat()
     }
 
-    private fun buildUI() {
+    private fun createUI() {
 
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_HORIZONTAL
             setPadding(24, 24, 24, 24)
             setBackgroundColor(bg)
         }
@@ -55,54 +57,67 @@ class MainActivity : Activity() {
         val scroll = ScrollView(this)
         scroll.addView(root)
 
-        val logo = TextView(this).apply {
-            text = "X"
-            textSize = 32f
-            gravity = Gravity.CENTER
-            typeface = Typeface.DEFAULT_BOLD
-            setTextColor(teal)
+        // HEADER
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
         }
 
-        root.addView(logo, LinearLayout.LayoutParams(100, 100))
-
-        val title = TextView(this).apply {
-            text = "SEA VPN"
-            textSize = 30f
-            typeface = Typeface.DEFAULT_BOLD
+        val logo = TextView(this).apply {
+            text = "X"
+            textSize = 26f
             gravity = Gravity.CENTER
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(blue)
+            background = shape(white, 16)
+        }
+
+        header.addView(logo, LinearLayout.LayoutParams(52, 52))
+
+        val brand = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(14, 0, 0, 0)
+        }
+
+        val name = TextView(this).apply {
+            text = "SEA VPN"
+            textSize = 23f
+            typeface = Typeface.DEFAULT_BOLD
             setTextColor(white)
         }
 
-        root.addView(title)
-
-        val subtitle = TextView(this).apply {
-            text = "SECURE • FAST • PRIVATE"
-            textSize = 12f
-            gravity = Gravity.CENTER
-            setTextColor(teal)
+        val tagline = TextView(this).apply {
+            text = "SECURE CONNECTION"
+            textSize = 11f
+            setTextColor(accent)
         }
 
-        root.addView(subtitle)
+        brand.addView(name)
+        brand.addView(tagline)
+        header.addView(brand)
 
+        root.addView(header)
+
+        // STATUS CARD
         val statusCard = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            background = rounded(card, 28)
-            setPadding(24, 36, 24, 36)
+            background = shape(panel, 26)
+            setPadding(20, 32, 20, 32)
         }
 
-        val dot = TextView(this).apply {
+        val statusIcon = TextView(this).apply {
             text = "●"
-            textSize = 36f
+            textSize = 40f
             gravity = Gravity.CENTER
-            setTextColor(teal)
+            setTextColor(accent)
         }
 
-        statusCard.addView(dot)
+        statusCard.addView(statusIcon)
 
         status = TextView(this).apply {
             text = "NOT CONNECTED"
-            textSize = 20f
+            textSize = 21f
             typeface = Typeface.DEFAULT_BOLD
             gravity = Gravity.CENTER
             setTextColor(white)
@@ -110,81 +125,85 @@ class MainActivity : Activity() {
 
         statusCard.addView(status)
 
-        val desc = TextView(this).apply {
-            text = "Your connection is currently unprotected"
+        detail = TextView(this).apply {
+            text = "Your connection is not protected"
             textSize = 13f
             gravity = Gravity.CENTER
             setTextColor(muted)
         }
 
-        statusCard.addView(desc)
+        statusCard.addView(detail)
 
-        val params = LinearLayout.LayoutParams(
-            -1, -2
-        ).apply {
-            topMargin = 40
-            bottomMargin = 28
-        }
+        val statusParams = LinearLayout.LayoutParams(-1, -2)
+        statusParams.topMargin = 32
+        statusParams.bottomMargin = 26
+        root.addView(statusCard, statusParams)
 
-        root.addView(statusCard, params)
+        // SERVER
+        section(root, "SERVER LOCATION")
 
-        label(root, "SERVER LOCATION")
+        serverSpinner = Spinner(this)
 
-        server = Spinner(this)
-
-        val locations = arrayOf(
+        val servers = arrayOf(
             "Singapore 🇸🇬",
             "Indonesia 🇮🇩",
             "Japan 🇯🇵",
             "United States 🇺🇸"
         )
 
-        server.adapter = ArrayAdapter(
+        serverSpinner.adapter = ArrayAdapter(
             this,
             android.R.layout.simple_spinner_dropdown_item,
-            locations
+            servers
         )
 
-        server.background = rounded(card, 18)
+        serverSpinner.background = shape(panel, 16)
 
-        root.addView(server, LinearLayout.LayoutParams(-1, 60))
+        root.addView(
+            serverSpinner,
+            LinearLayout.LayoutParams(-1, 58)
+        )
 
-        label(root, "TLS / SNI")
+        // SNI
+        section(root, "TLS / SNI")
 
-        sni = EditText(this).apply {
-            hint = "SNI hostname"
+        sniInput = EditText(this).apply {
+            hint = "Masukkan hostname SNI"
             textSize = 15f
             setSingleLine(true)
             setTextColor(white)
             setHintTextColor(muted)
-            background = rounded(card, 18)
+            background = shape(panel, 16)
             setPadding(20, 0, 20, 0)
         }
 
-        root.addView(sni, LinearLayout.LayoutParams(-1, 60))
+        root.addView(
+            sniInput,
+            LinearLayout.LayoutParams(-1, 58)
+        )
 
-        connect = Button(this).apply {
+        // CONNECT
+        connectButton = TextView(this).apply {
             text = "CONNECT"
-            textSize = 18f
+            textSize = 19f
             typeface = Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
             setTextColor(bg)
-            background = rounded(teal, 24)
+            background = shape(accent, 25)
+            elevation = 8f
+
             setOnClickListener {
-                if (!connected) requestVpn()
-                else disconnectVpn()
+                requestPermission()
             }
         }
 
-        val connectParams = LinearLayout.LayoutParams(
-            -1, 68
-        ).apply {
-            topMargin = 32
-        }
+        val buttonParams = LinearLayout.LayoutParams(-1, 68)
+        buttonParams.topMargin = 30
+        root.addView(connectButton, buttonParams)
 
-        root.addView(connect, connectParams)
-
+        // FOOTER
         val footer = TextView(this).apply {
-            text = "\nSEA VPN • PRIVATE NETWORK\nUDP VPN ENGINE"
+            text = "\nSEA VPN • PRIVATE NETWORK\nUDP / TLS VPN"
             textSize = 12f
             gravity = Gravity.CENTER
             setTextColor(muted)
@@ -195,24 +214,33 @@ class MainActivity : Activity() {
         setContentView(scroll)
     }
 
-    private fun label(root: LinearLayout, text: String) {
-        val view = TextView(this).apply {
+    private fun section(
+        root: LinearLayout,
+        text: String
+    ) {
+        val label = TextView(this).apply {
             this.text = text
             textSize = 12f
             typeface = Typeface.DEFAULT_BOLD
-            setTextColor(teal)
-            setPadding(4, 24, 4, 10)
+            setTextColor(accent)
+            setPadding(2, 18, 2, 10)
         }
-        root.addView(view)
+
+        root.addView(label)
     }
 
-    private fun requestVpn() {
+    private fun requestPermission() {
+
         val intent = VpnService.prepare(this)
 
         if (intent != null) {
-            startActivityForResult(intent, VPN_REQUEST)
+            startActivityForResult(
+                intent,
+                VPN_REQUEST
+            )
         } else {
-            startTunnel()
+            permissionGranted = true
+            showEngineNotice()
         }
     }
 
@@ -222,48 +250,36 @@ class MainActivity : Activity() {
         resultCode: Int,
         data: Intent?
     ) {
-        super.onActivityResult(requestCode, resultCode, data)
+        super.onActivityResult(
+            requestCode,
+            resultCode,
+            data
+        )
 
         if (requestCode == VPN_REQUEST &&
-            resultCode == RESULT_OK) {
-            startTunnel()
+            resultCode == RESULT_OK
+        ) {
+            permissionGranted = true
+            showEngineNotice()
         }
     }
 
-    private fun startTunnel() {
+    private fun showEngineNotice() {
 
-        val intent = Intent(this, SeaVpnService::class.java)
-        intent.action = SeaVpnService.ACTION_CONNECT
+        status.text = "ENGINE NOT CONFIGURED"
+        detail.text =
+            "Izin VPN diberikan • Server belum terhubung"
 
-        if (android.os.Build.VERSION.SDK_INT >= 26) {
-            startForegroundService(intent)
-        } else {
-            startService(intent)
-        }
+        connectButton.text = "ENGINE NOT READY"
 
-        connected = true
-        status.text = "VPN INTERFACE STARTED"
-        connect.text = "DISCONNECT"
-        connect.setTextColor(white)
-        connect.background = rounded(Color.rgb(190, 50, 60), 24)
+        connectButton.setTextColor(white)
+        connectButton.background =
+            shape(Color.rgb(65, 78, 90), 25)
 
         Toast.makeText(
             this,
-            "TUN interface started",
-            Toast.LENGTH_SHORT
+            "Izin VPN berhasil. Engine UDP belum dipasang.",
+            Toast.LENGTH_LONG
         ).show()
-    }
-
-    private fun disconnectVpn() {
-
-        val intent = Intent(this, SeaVpnService::class.java)
-        intent.action = SeaVpnService.ACTION_DISCONNECT
-        startService(intent)
-
-        connected = false
-        status.text = "NOT CONNECTED"
-        connect.text = "CONNECT"
-        connect.setTextColor(bg)
-        connect.background = rounded(teal, 24)
     }
 }
