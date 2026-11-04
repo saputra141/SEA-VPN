@@ -1,6 +1,6 @@
 [versions]
 minSdk = "29"
-targetSdk = "37"
+targetSdk = "36"
 versionName = "1.6.6"
 versionCode = "30"
 agp = "9.2.1"
