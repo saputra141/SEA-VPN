@@ -44,7 +44,7 @@ jobs:
       - name: Install Android SDK and NDK
         run: |
           sdkmanager "platform-tools" \
-            "platforms;android-36" \
+            "platforms;android-37" \
             "build-tools;36.0.0" \
             "ndk;30.0.14904198"
 
@@ -60,10 +60,15 @@ jobs:
         with:
           gradle-version: '9.4.1'
 
-      - name: Fix Hysteria plugin resolution
+      - name: Fix Hysteria Gradle configuration
         run: |
           sed -i 's/alias(libs.plugins.android.library)/id("com.android.library")/' hysteria/hysteria/build.gradle.kts
           sed -i 's/alias(libs.plugins.kotlin.serialization)/id("org.jetbrains.kotlin.plugin.serialization")/' hysteria/hysteria/build.gradle.kts
+
+      - name: Update compileSdk to 37
+        run: |
+          sed -i -E 's/compileSdk[[:space:]]*=[[:space:]]*[0-9]+/compileSdk = 37/' app/build.gradle.kts
+          sed -i -E 's/compileSdk[[:space:]]*=[[:space:]]*[0-9]+/compileSdk = 37/' hysteria/hysteria/build.gradle.kts
 
       - name: Build APK
         run: |
